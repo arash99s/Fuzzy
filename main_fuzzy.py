@@ -21,7 +21,7 @@ activate_rules = [['H','SH','LH','U','U'],
                   ['U','SH','H','SH','U'],
                   ['U','LH','H','SH','LH']]
 
-fuzzified_decision = {'U': 0 , 'LH': 0 ,'SH': 0 ,'H': 0}
+fuzzified_decision = {'U': [0] , 'LH': [0] ,'SH': [0] ,'H': [0]}
 
 
 membership_height = Membership.Membership_Height()
@@ -35,47 +35,55 @@ print('heigth degrees : ' , height_mu)
 
 
 
-
+# create rule table with obtained values
 activate_rules_mu = np.zeros((5,5))
-
 for i in range(5):
     for j in range(5):
         activate_rules_mu[i,j] = min(height_mu[i],weight_mu[j])
         if activate_rules_mu[i,j] != 0:
-            fuzzified_decision[activate_rules[i][j]] = activate_rules_mu[i,j]
+            fuzzified_decision[activate_rules[i][j]].append(activate_rules_mu[i,j])
 
 
+# show rule table
 print(activate_rules_mu)
-print(fuzzified_decision)
+
+# max of every set values
+fuzzified_decision_max = {'U': 0 , 'LH': 0 ,'SH': 0 ,'H': 0}
+fuzzified_decision_max['U'] = max(fuzzified_decision['U'])
+fuzzified_decision_max['LH'] = max(fuzzified_decision['LH'])
+fuzzified_decision_max['SH'] = max(fuzzified_decision['SH'])
+fuzzified_decision_max['H'] = max(fuzzified_decision['H'])
+
+print(fuzzified_decision_max)
 
 
-
-
+# create a polygen from obtained set values
 polygen = Decision_Polygen.Polygen()
 polygen.add_point(0 , 0)  # first point must be zero
-polygen.add_point(0.2 , fuzzified_decision['U'])
-polygen.add_point(0.4 , fuzzified_decision['LH'])
-polygen.add_point(0.6 , fuzzified_decision['SH'])
-polygen.add_point(0.8 , fuzzified_decision['H'])
+polygen.add_point(0.2 , fuzzified_decision_max['U'])
+polygen.add_point(0.4 , fuzzified_decision_max['LH'])
+polygen.add_point(0.6 , fuzzified_decision_max['SH'])
+polygen.add_point(0.8 , fuzzified_decision_max['H'])
 polygen.add_point(1 , 0)  # last point must be zero
 
 
+# use polygen to calculate y coordinates from x values
 x_coords = np.arange(0, 1, 0.01)
 y_coords = []
-
 for x in x_coords:
     y_coords.append(polygen.find_y(x))
 
 
-mfx = np.array(y_coords)
 
+# defuzzification 
+mfx = np.array(y_coords)
 defuzz_centroid = fuzz.defuzz(x_coords, mfx, 'centroid')  
 defuzz_bisector = fuzz.defuzz(x_coords, mfx, 'bisector')
-defuzz_mom = fuzz.defuzz(x_coords, mfx, 'mom')
+defuzz_mom = fuzz.defuzz(x_coords, mfx, 'mom') # mean of max
 
 
 
-# Collect info for vertical lines
+########################## show results in chart
 labels = ['centroid', 'bisector', 'mean of maximum']
 xvals = [defuzz_centroid,
          defuzz_bisector,
@@ -90,6 +98,7 @@ plt.plot(x_coords, mfx, 'k')
 for xv, y, label, color in zip(xvals, ymax, labels, colors):
     plt.vlines(xv, 0, y, label=label, color=color)
 plt.ylabel('Fuzzy membership')
+plt.xlabel('{U    LH    SH    H}')
 plt.ylim(-0.1, 1.1)
 plt.legend(loc=2)
 
